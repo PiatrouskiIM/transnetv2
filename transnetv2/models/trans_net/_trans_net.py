@@ -316,3 +316,41 @@ class ColorHistograms(nn.Module):
         if self.fc is not None:
             return functional.relu(self.fc(similarities))
         return similarities
+
+
+def old_to_new(path="transnetv2-pytorch-weights.pth", save_path="latest.pth"):
+    from .trans_net import trans_net
+    model_gt = TransNetV2()
+    model_gt.eval()
+    model = trans_net()
+    model.eval()
+
+    state_dict = torch.load(path)
+    model_gt.load_state_dict(state_dict)
+    model_gt.eval()
+
+    model.head.load_state_dict(model_gt.cls_layer1.state_dict())
+    model.outro[0].load_state_dict(model_gt.fc1.state_dict())
+    model.hist_fusion[0].load_state_dict(model_gt.color_hist_layer.fc.state_dict())
+    model.feat_fusion[0].load_state_dict(model_gt.frame_sim_layer.fc.state_dict())
+    model.feature_projection.load_state_dict(model_gt.frame_sim_layer.projection.state_dict())
+
+    print(len(model_gt.SDDCNN), '-', len)
+    for block, block_gt in zip(model.levels, model_gt.SDDCNN):
+        for sub_block, sub_block_gt in zip((block[0].intro, block[0].layers[0]), block_gt.DDCNN):
+            convs = sub_block[0]
+            convs.layers[0][0].load_state_dict(sub_block_gt.Conv3D_1.layers[0].state_dict())
+            convs.layers[0][1].load_state_dict(sub_block_gt.Conv3D_1.layers[1].state_dict())
+
+            convs.layers[1][0].load_state_dict(sub_block_gt.Conv3D_2.layers[0].state_dict())
+            convs.layers[1][1].load_state_dict(sub_block_gt.Conv3D_2.layers[1].state_dict())
+
+            convs.layers[2][0].load_state_dict(sub_block_gt.Conv3D_4.layers[0].state_dict())
+            convs.layers[2][1].load_state_dict(sub_block_gt.Conv3D_4.layers[1].state_dict())
+
+            convs.layers[3][0].load_state_dict(sub_block_gt.Conv3D_8.layers[0].state_dict())
+            convs.layers[3][1].load_state_dict(sub_block_gt.Conv3D_8.layers[1].state_dict())
+
+            sub_block[1].load_state_dict(sub_block_gt.bn.state_dict())
+    # model.eval()
+    torch.save(model.state_dict(), save_path)

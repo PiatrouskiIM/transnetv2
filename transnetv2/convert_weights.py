@@ -3,8 +3,8 @@ import torch
 import argparse
 import numpy as np
 import tensorflow as tf
-
 import transnetv2_pytorch
+
 
 os.environ["TF_CPP_MIN_LOG_LEVEL"] = "3"
 
@@ -119,7 +119,7 @@ def main():
     torch_model, tf_model = convert_weights(args.tf_weights)
 
     print("Saving model to ./transnetv2-pytorch-weights.pth")
-    torch.save(torch_model.state_dict(), "./transnetv2-pytorch-weights.pth")
+    torch.save(torch_model.state_dict(), "../transnet2/transnetv2-pytorch-weights.pth")
 
     if args.test:
         test_models(torch_model, tf_model)
