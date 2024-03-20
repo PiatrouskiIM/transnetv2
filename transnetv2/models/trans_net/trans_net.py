@@ -82,5 +82,5 @@ class TransNetV2_Weights(WeightsEnum):
         return lambda x: x
 
 
-def trans_net():
+def trans_net(pretrained=True):
     return TransNetV2()

@@ -6,8 +6,14 @@ from transnetv2.models import trans_net
 import torch
 from tqdm import tqdm
 
+
+def sigmoid(x):
+    return 1 / (1 + np.exp(-x))
+
+
 if __name__ == "__main__":
     import argparse
+    import onnxruntime as ort
 
     parser = argparse.ArgumentParser()
     parser.add_argument('-i', "--input", type=str,  # required=True,
@@ -28,9 +34,11 @@ if __name__ == "__main__":
     point_time = time()
     print(f"Warmup...")
     input_video = torch.zeros(10, 3, 100, 27, 48, dtype=torch.uint8) * 255
-    model = model.cuda()
-    input_video = input_video.cuda()
-    model(input_video)
+    model = model  # .cuda()
+    input_video = input_video  # .cuda()
+    x = model(input_video)
+
+    ort_session = ort.InferenceSession("transnetv2.onnx")
 
     print(f"Warmup...Done in {time() - point_time:.2f} sec.")
     # traced_model = torch.jit.trace(model, input_video)
@@ -50,12 +58,19 @@ if __name__ == "__main__":
     pad_right = 25 + 50 - (len(frames) % 50 if len(frames) % 50 != 0 else 50)  # 25 - 74
     x = np.concatenate([frames[:1]] * pad_left + [frames] + [frames[-1:]] * pad_right, 0)
 
+    number_frames = len(x)
+    x = x[None].transpose(0, 4, 1, 2, 3)
+
     predictions = []
-    for i in tqdm(range(0, len(x) - 100, 50)):
-        batch = torch.Tensor(x[i:i + 100][None]).permute(0, 4, 1, 2, 3).cuda()
-        single_frame_pred = torch.sigmoid(model(batch))
-        predictions.append(single_frame_pred.cpu().detach().numpy()[0, 25:75])
-    print("")
+    for i in tqdm(range(0, number_frames - 100, 50)):
+        out = ort_session.run(None,{"input1": x[:, :, i:i + 100]})[0]
+        predictions.append(sigmoid(out[0, 25:75]))
+
+        # batch = torch.Tensor(x[i:i + 100][None]).permute(0, 4, 1, 2, 3)#.cuda()
+        # single_frame_pred = torch.sigmoid(model(batch))
+        # predictions.append(outputs)
+        # print()
+    # print("")
 
     predictions = np.concatenate(predictions)[:len(frames)]
     timecodes = np.where(predictions > .5)[0] / 25
