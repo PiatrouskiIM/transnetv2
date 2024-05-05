@@ -3,7 +3,7 @@ import torch
 import argparse
 import numpy as np
 import tensorflow as tf
-import transnetv2_pytorch
+import transnetv2.models.trans_net.trans_net_vanilla as transnetv2_pytorch
 
 
 os.environ["TF_CPP_MIN_LOG_LEVEL"] = "3"
@@ -109,7 +109,7 @@ def test_models(torch_model, tf_model):
               f"{many * 100:5.1f}% of 'many' predictions matching")
 
 
-def main():
+if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument("--tf_weights", type=str, help="path to TransNet V2 weights",
                         default="../inference/transnetv2-weights/")
@@ -123,7 +123,3 @@ def main():
 
     if args.test:
         test_models(torch_model, tf_model)
-
-
-if __name__ == "__main__":
-    main()

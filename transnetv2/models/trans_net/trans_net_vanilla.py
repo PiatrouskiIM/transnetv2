@@ -1,8 +1,11 @@
+# This is pytorch implementation from original repo used for reference
+
 import torch
 import torch.nn as nn
 import torch.nn.functional as functional
 
 import random
+from time import time
 
 
 class TransNetV2(nn.Module):
@@ -354,3 +357,30 @@ def old_to_new(path="transnetv2-pytorch-weights.pth", save_path="latest.pth"):
             sub_block[1].load_state_dict(sub_block_gt.bn.state_dict())
     # model.eval()
     torch.save(model.state_dict(), save_path)
+
+
+@torch.no_grad()
+def verify_conversion(vanilla_weights_path="", current_weights_path=""):
+    from .trans_net import trans_net
+    model_gt = TransNetV2()
+    state_dict = torch.load(vanilla_weights_path)
+    model_gt.load_state_dict(state_dict)
+    model_gt.eval()
+
+    model = trans_net()
+    state_dict = torch.load(current_weights_path)
+    model.load_state_dict(state_dict)
+    model.eval()
+
+    input_video = (torch.zeros(1, 3, 100, 27, 48) * 255).to(torch.uint8)  # .cuda()
+    input_video_gt = input_video.permute(0, 2, 3, 4, 1)
+
+    point_time = time()
+    a = model(input_video)
+    print(f"Execution speed {time() - point_time:.3f} sec.")
+
+    point_time = time()
+    b = torch.squeeze(model_gt(input_video_gt)[0], -1)
+    print(f"Execution speed {time() - point_time:.3f} sec.")
+
+    print(f"Difference on current input {torch.linalg.norm(a - b):.4f}")
