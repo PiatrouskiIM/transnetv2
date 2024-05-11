@@ -82,6 +82,12 @@ class TransNetV2(nn.Module):
         x = torch.squeeze(x, dim=-1)
         return torch.sigmoid(x)
 
+    def onnx(self, save_path: str, **kwargs) -> None:
+        assert not self.training, """To export a model to onnx format, the model must be in evaluation mode. """ \
+                                  """Consider calling .eval() before running this function."""
+        x = torch.randint(low=0, high=255, size=(1, 3, 100, 27, 48), dtype=torch.uint8)
+        torch.onnx.export(self, x, save_path, verbose=True, input_names=["input"], output_names=["output"], **kwargs)
+
 
 class TransNetV2ANE(TransNetV2):
     def forward(self, inputs):
@@ -115,5 +121,5 @@ class TransNetV2_Weights(WeightsEnum):
 def trans_net(*, weights=None, progress=True, **kwargs):
     model = TransNetV2(**kwargs)
     if weights is not None:
-        model.load_state_dict(torch.load(weights))#.get_state_dict(progress=progress))
+        model.load_state_dict(torch.load(weights))  # .get_state_dict(progress=progress))
     return model

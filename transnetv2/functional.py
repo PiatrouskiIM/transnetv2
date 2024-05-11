@@ -2,7 +2,6 @@ import torch
 import torch.nn.functional as functional
 from torch.nn.functional import *
 import numpy as np
-from tqdm import tqdm
 
 
 def batched_bincount(inputs: torch.LongTensor, min_length: int = 512) -> torch.Tensor:
@@ -31,35 +30,3 @@ def limited_pairwise_similarities(x, kernel_size):
     a = functional.pad(x, pad=[0, 0, int((kernel_size - 1) // 2), int((kernel_size - 1) // 2)])[:, index]
     b = torch.unsqueeze(x, dim=-1)
     return torch.squeeze(torch.matmul(a, b), dim=-1)
-
-
-def non_maximum_suppression(sequence, radius: int = 25):
-    sequence = np.array(sequence)
-    i = 0
-    while i < len(sequence) - radius:
-        index = np.argmax(sequence[i:i + radius]) + i
-        value = sequence[index]
-        sequence[i:i + radius] = 0.
-        sequence[index] = value
-        i = max(index, i + 1)
-
-    index = np.argmax(sequence[-radius:]) + len(sequence) - radius
-    value = sequence[index]
-    sequence[i:i + radius] = 0.
-    sequence[index] = value
-    return sequence
-
-
-def np_sigmoid(x):
-    return 1 / (1 + np.exp(-x))
-
-
-def get_sliding_window(inputs, kernel_size=100, stride=50, batch_size=1, padding=1):
-    def calculate_pad(n, step_size=stride):
-        return int(step_size / 2), int(step_size / 2 + np.ceil(n / step_size) * step_size - n)
-    if padding != 0:
-        pad_left, pad_right = calculate_pad(len(inputs))
-        inputs = np.concatenate([inputs[:1]] * pad_left + [inputs] + [inputs[-1:]] * pad_right, axis=0)
-    for i in tqdm(range(0, len(inputs) - stride * (batch_size + 1), stride * batch_size)):
-        index = (np.arange(batch_size) * stride + i)[:, None] + np.arange(kernel_size)[None]
-        yield inputs[index].transpose(0, 4, 1, 2, 3)

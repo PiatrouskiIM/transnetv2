@@ -6,3 +6,7 @@
 .ipynb_checkpoints
 /transnetv2.egg-info/
 /build/
+/transnet.egg-info/
+todo.md
+transnetv2-pytorch-weights.pth
+*.pth
