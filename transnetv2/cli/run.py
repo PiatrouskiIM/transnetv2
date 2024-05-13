@@ -6,7 +6,11 @@ import argparse
 
 def main():
     parser = argparse.ArgumentParser()
-    parser.add_argument('-i', "--input", type=str, required=True, default="input.mp4", help="input video path.")
+    parser.add_argument('-i', "--input",
+                        type=str,
+                        required=True,
+                        default="input.mp4",
+                        help="input video path.")
     parser.add_argument('-o', "--output", type=str, default="cuts.txt", help="output video path.")
     parser.add_argument('--weights', type=str, default=None)
     parser.add_argument("--batch", default=1, type=int, help="device.")
@@ -30,4 +34,3 @@ def main():
 
 if __name__ == "__main__":
     main()
-

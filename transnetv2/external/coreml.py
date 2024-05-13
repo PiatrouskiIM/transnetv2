@@ -1,5 +1,6 @@
 import torch
 import coremltools as ct
+import coremltools.optimize.coreml as cto
 from ..utils import inference_format_by_extension
 
 
@@ -22,3 +23,11 @@ def save(trans_net_v2_ane,
                           compute_precision=compute_precision,
                           minimum_deployment_target=minimum_deployment_target)
     ct_model.save(save_path)
+
+
+def quantize(source_path, target_path):
+    model = ct.models.MLModel(source_path)
+    op_config = cto.OpLinearQuantizerConfig(mode="linear_symmetric", weight_threshold=512)
+    config = cto.OptimizationConfig(global_config=op_config)
+    compressed_8_bit_model = cto.linear_quantize_weights(model, config=config)
+    compressed_8_bit_model.save(target_path)

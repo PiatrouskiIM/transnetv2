@@ -34,3 +34,24 @@ class Predictor:
         frame_nos = np.where(predictions > self.confidence)[0]
         timecodes = frame_nos / fps
         return timecodes
+
+    def stream(self, video_path: str):
+        fps = video.read_meta(video_path)["fps"]
+        min_scene_duration_in_frames = int(np.floor(fps * self.min_scene_duration))
+        frames = video.read_resized_frames(video_path=video_path, size=(48, 27))
+        locations, heights = [], []
+        for i, batch in enumerate(utils.get_sliding_window(frames, batch_size=self.batch_size, verbose=False)):
+            current_scores = self.predict_numpy(batch).reshape(-1)
+            new_locations = np.where(current_scores > self.confidence)[0]
+            locations.extend(new_locations + i * self.batch_size * 50)
+            heights.extend(current_scores[new_locations])
+            while len(locations) > 1:
+                i_to_delete = 0
+                if locations[1] - locations[0] > min_scene_duration_in_frames:
+                    if locations[0] < len(frames):
+                        yield locations[0] / fps
+                else:
+                    i_to_delete += heights[0] > heights[1]
+                del locations[i_to_delete], heights[i_to_delete]
+        if len(locations) > 0 and locations[0] < len(frames):
+            yield locations[0] / fps

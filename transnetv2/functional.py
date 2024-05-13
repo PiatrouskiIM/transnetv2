@@ -10,7 +10,7 @@ def batched_bincount(inputs: torch.LongTensor, min_length: int = 512) -> torch.T
 
 
 @torch.jit.script
-def get_bins(inputs: torch.LongTensor):
+def get_bins(inputs):#: torch.LongTensor): # TODO: check if conversion is stil works
     # input shape B x 3 x N
     x = torch.divide(input=inputs, other=32, rounding_mode='trunc')
     return x[:, 0] * 64 + x[:, 1] * 8 + x[:, 2]
