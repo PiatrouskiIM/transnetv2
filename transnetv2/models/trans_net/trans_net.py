@@ -99,7 +99,7 @@ class TransNetV2ANE(TransNetV2):
 
 class TransNetV2_Weights(WeightsEnum):
     ClipShots_V1 = Weights(
-        url="https://download.pytorch.org/models/wide_resnet101_2-d733dc28.pth",
+        url="https://github.com/PiatrouskiIM/transnetv2/releases/download/1.0.1/latest.pth",
         transforms=lambda x: x,  # partial(ImageClassification, crop_size=224),
         meta={
             # **_COMMON_META,
