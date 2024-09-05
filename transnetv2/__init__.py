@@ -1,4 +1,3 @@
-# import models
 from .models import *
 from .trans_net_v2_predictor import TransNetV2Predictor
 

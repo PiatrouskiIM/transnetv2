@@ -1,7 +1,7 @@
 import torch
+
 from .predictor import Predictor
 from .models import trans_net
-from .utils import inference_format_by_extension
 
 
 class TransNetV2Predictor(Predictor):
@@ -16,7 +16,3 @@ class TransNetV2Predictor(Predictor):
     def predict_numpy(self, x):
         x = torch.Tensor(x).to(self.device)
         return self.model(x)[:, 25:75].detach().cpu().numpy()
-
-    def save(self, save_path: str):
-        assert inference_format_by_extension(save_path) == self.framework
-        torch.save(self.model.state_dict(), save_path)

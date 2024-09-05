@@ -2,6 +2,8 @@
 *.npy
 *.mp4
 *.pickle
+*.pt
+*.pth
 .idea
 .ipynb_checkpoints
 /transnetv2.egg-info/
@@ -9,4 +11,5 @@
 /transnet.egg-info/
 todo.md
 transnetv2-pytorch-weights.pth
-*.pth
+
+/checkpoints/

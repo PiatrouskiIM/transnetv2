@@ -1,9 +1,11 @@
+import os
 import torch
-import torch.nn as nn
+from torch import nn
 from .basic_block import BasicBlock
-import transnetv2.functional as functional
+from transnetv2 import functional
 
-from torchvision.models._api import WeightsEnum, Weights
+from torchvision.models._api import WeightsEnum, Weights, register_model
+from torchvision.models._utils import handle_legacy_interface
 
 
 class TransNetV2(nn.Module):
@@ -25,7 +27,7 @@ class TransNetV2(nn.Module):
     def forward(self, inputs):
         x = inputs
         x = x.float()
-        x = x.div_(255.)
+        x = x.div(255.)
 
         features = []
         for module in self.levels:
@@ -52,10 +54,10 @@ class TransNetV2(nn.Module):
         return torch.sigmoid(x)
 
     def forward_ane(self, inputs):
-        inputs = inputs  # .permute(0, 4, 1, 2, 3)
+        inputs = inputs
         x = inputs
         x = x.float()
-        x = x.div_(255.)
+        x = x.div(255.)
 
         features = []
         for module in self.levels:
@@ -80,6 +82,7 @@ class TransNetV2(nn.Module):
         x = self.outro(x)
         x = self.head(x)
         x = torch.squeeze(x, dim=-1)
+        # return torch.sigmoid(x)[:, 25:75]  # TODO: delete line
         return torch.sigmoid(x)
 
     def onnx(self, save_path: str, **kwargs) -> None:
@@ -96,7 +99,7 @@ class TransNetV2ANE(TransNetV2):
 
 class TransNetV2_Weights(WeightsEnum):
     ClipShots_V1 = Weights(
-        url="",
+        url="https://download.pytorch.org/models/wide_resnet101_2-d733dc28.pth",
         transforms=lambda x: x,  # partial(ImageClassification, crop_size=224),
         meta={
             # **_COMMON_META,
@@ -109,17 +112,15 @@ class TransNetV2_Weights(WeightsEnum):
     )
     DEFAULT = ClipShots_V1
 
-    @staticmethod
-    def transforms():
-        return lambda x: x
-
-    @staticmethod
-    def postprocessing():
-        return lambda x: x
-
-
-def trans_net(*, weights=None, progress=True, **kwargs):
+@register_model()
+@handle_legacy_interface(weights=("pretrained", TransNetV2_Weights.ClipShots_V1))
+def trans_net(*, weights=TransNetV2_Weights.ClipShots_V1, progress=True, **kwargs):
     model = TransNetV2(**kwargs)
-    if weights is not None:
-        model.load_state_dict(torch.load(weights))  # .get_state_dict(progress=progress))
+    if weights == "pretrained":
+        weights = TransNetV2_Weights.ClipShots_V1
+    if isinstance(weights, str):
+        model.load_state_dict(torch.load(weights))
+    elif weights is not None:
+        weights = TransNetV2_Weights.verify(weights)
+        model.load_state_dict(weights.get_state_dict(progress=progress, check_hash=True))  # .get_state_dict(progress=progress))
     return model

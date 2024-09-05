@@ -1,4 +1,3 @@
-import os
 import numpy as np
 
 from . import video
@@ -19,10 +18,10 @@ class Predictor:
     def predict_numpy(self, x):
         raise NotImplementedError
 
-    def __call__(self, video_path: str):
-        fps = video.read_meta(video_path)["fps"]
-        min_scene_duration_in_frames = int(np.floor(fps * self.min_scene_duration))
-        frames = video.read_resized_frames(video_path=video_path, size=(48, 27))
+    def __call__(self, video_path: str, fps=None):
+        frames = video.read_resized_frames(video_path=video_path, size=(48, 27), fps=fps)
+        fps = fps or video.read_meta(video_path)["fps"]
+        min_scene_duration_in_frames = int(fps * self.min_scene_duration)
         predictions = []
         for batch in utils.get_sliding_window(frames, batch_size=self.batch_size):
             predictions.extend(self.predict_numpy(batch).reshape(-1))
@@ -35,10 +34,10 @@ class Predictor:
         timecodes = frame_nos / fps
         return timecodes
 
-    def stream(self, video_path: str):
-        fps = video.read_meta(video_path)["fps"]
-        min_scene_duration_in_frames = int(np.floor(fps * self.min_scene_duration))
-        frames = video.read_resized_frames(video_path=video_path, size=(48, 27))
+    def stream(self, video_path: str, fps=None):
+        frames = video.read_resized_frames(video_path=video_path, size=(48, 27), fps=fps)
+        fps = fps or video.read_meta(video_path)["fps"]
+        min_scene_duration_in_frames = int(fps * self.min_scene_duration)
         locations, heights = [], []
         for i, batch in enumerate(utils.get_sliding_window(frames, batch_size=self.batch_size, verbose=False)):
             current_scores = self.predict_numpy(batch).reshape(-1)
